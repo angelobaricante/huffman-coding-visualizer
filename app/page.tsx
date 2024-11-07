@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from "react"
 import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowRight, Info, ZoomIn, ZoomOut, Move } from "lucide-react"
 import * as d3 from "d3"
 import { ErrorBoundary } from 'react-error-boundary'
+import TextInputControl from '@/components/TextInputControl'
 
 type HuffmanNode = {
   char: string
@@ -191,9 +191,6 @@ const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
       .call(zoom.transform, d3.zoomIdentity)
   }
 
-  
-  
-  
   return (
     <div className="relative w-full h-[900px] overflow-hidden border rounded-lg">
       <svg ref={svgRef} width="100%" height="100%"></svg>
@@ -348,30 +345,13 @@ export default function HuffmanCodingVisualizer() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>Huffman Coding Visualizer</CardTitle>
-            <CardDescription>Explore the process of Huffman Coding step by step</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center space-y-4">
-              <Input
-                placeholder="Enter text to encode"
-                value={inputText}
-                onChange={handleInputChange}
-                className="w-full max-w-md"
-              />
-              <div className="flex space-x-2">
-                <Button onClick={handleNextStep} disabled={step >= 3}>
-                {step === 0 ? "Start Visualization" : "Next Step"}
-                </Button>
-                <Button onClick={handleReset} variant="outline">
-                  Reset
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <TextInputControl
+          inputText={inputText}
+          onInputChange={handleInputChange}
+          onNextStep={handleNextStep}
+          onReset={handleReset}
+          step={step}
+        />
 
         {step > 0 && (
           <Card className="w-full max-w-5xl mt-8">
