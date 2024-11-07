@@ -118,7 +118,7 @@ const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
     const root = d3.hierarchy(data)
     tree(root)
 
-    const link = g.selectAll(".link")
+    g.selectAll(".link")
       .data(root.links())
       .enter().append("path")
       .attr("class", "link")
@@ -167,11 +167,11 @@ const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
     if (direction === 'in') {
       svg.transition()
         .duration(300)
-        .call(zoom.scaleBy as any, 1.3)
+        .call(zoom.scaleBy, 1.3)
     } else {
       svg.transition()
         .duration(300)
-        .call(zoom.scaleBy as any, 1 / 1.3)
+        .call(zoom.scaleBy, 1 / 1.3)
     }
   }
 
@@ -188,7 +188,7 @@ const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
 
     svg.transition()
       .duration(300)
-      .call(zoom.transform as any, d3.zoomIdentity)
+      .call(zoom.transform, d3.zoomIdentity)
   }
 
   
