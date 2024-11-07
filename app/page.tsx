@@ -1,101 +1,545 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useEffect, useRef } from "react"
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ArrowRight, Info, ZoomIn, ZoomOut, Move } from "lucide-react"
+import * as d3 from "d3"
+import { ErrorBoundary } from 'react-error-boundary'
+
+type HuffmanNode = {
+  char: string
+  frequency: number
+  code: string
+  children?: HuffmanNode[]
+}
+
+const getFrequencyData = (text: string) => {
+  const freq: { [key: string]: number } = {}
+  for (const char of text) {
+    freq[char] = (freq[char] || 0) + 1
+  }
+  return Object.entries(freq).map(([char, count]) => ({ char, count }))
+}
+
+const buildHuffmanTree = (text: string): HuffmanNode => {
+  const freq: { [key: string]: number } = {}
+  for (const char of text) {
+    freq[char] = (freq[char] || 0) + 1
+  }
+
+  const nodes: HuffmanNode[] = Object.entries(freq).map(([char, frequency]) => ({
+    char,
+    frequency,
+    code: "",
+  }))
+
+  while (nodes.length > 1) {
+    nodes.sort((a, b) => a.frequency - b.frequency)
+    const left = nodes.shift()!
+    const right = nodes.shift()!
+    const parent: HuffmanNode = {
+      char: left.char + right.char,
+      frequency: left.frequency + right.frequency,
+      code: "",
+      children: [left, right],
+    }
+    nodes.push(parent)
+  }
+
+  const assignCodes = (node: HuffmanNode, code: string) => {
+    node.code = code
+    if (node.children) {
+      assignCodes(node.children[0], code + "0")
+      assignCodes(node.children[1], code + "1")
+    }
+  }
+
+  assignCodes(nodes[0], "")
+  return nodes[0]
+}
+
+const encodeText = (text: string, root: HuffmanNode): string => {
+  const codes: { [key: string]: string } = {}
+  const getCodes = (node: HuffmanNode) => {
+    if (!node.children) {
+      codes[node.char] = node.code
+    } else {
+      getCodes(node.children[0])
+      getCodes(node.children[1])
+    }
+  }
+  getCodes(root)
+
+  return text
+    .split("")
+    .map((char) => codes[char])
+    .join("")
+}
+
+const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [currentTransform, setCurrentTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity)
+  const [gRef, setGRef] = useState<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null)
+
+  useEffect(() => {
+    if (!data || !svgRef.current) return
+
+    const width = 2400
+    const height = 1200
+    const margin = { top: 40, right: 400, bottom: 40, left: 400 }
+
+    const svg = d3.select(svgRef.current)
+    svg.selectAll("*").remove()
+
+    const g = svg.append("g")
+    setGRef(g)
+
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform)
+        setCurrentTransform(event.transform)
+      })
+
+    svg.call(zoom)
+
+    const tree = d3.tree<HuffmanNode>()
+      .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
+      .separation((a, b) => {
+        const baseSeparation = a.parent === b.parent ? 4 : 5
+        const leafSeparation = (!a.children && !b.children) ? 2 : 1
+        return baseSeparation * leafSeparation
+      })
+
+    const root = d3.hierarchy(data)
+    tree(root)
+
+    const link = g.selectAll(".link")
+      .data(root.links())
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("d", d3.linkHorizontal<d3.HierarchyLink<HuffmanNode>, d3.HierarchyPointNode<HuffmanNode>>()
+        .x(d => d.y!)
+        .y(d => d.x!))
+      .attr("fill", "none")
+      .attr("stroke", "hsl(var(--primary))")
+
+    const node = g.selectAll(".node")
+      .data(root.descendants())
+      .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.y},${d.x})`)
+
+    node.append("circle")
+      .attr("r", 30)
+      .attr("fill", "hsl(var(--primary))")
+
+    node.append("text")
+      .attr("dy", ".35em")
+      .attr("x", d => d.children ? -40 : 40)
+      .attr("text-anchor", d => d.children ? "end" : "start")
+      .text(d => {
+        const char = d.data.char
+        return char.length > 6 ? char.slice(0, 6) + "..." : char
+      })
+      .attr("fill", "hsl(var(--primary))")
+      .attr("font-size", "16px")
+
+    svg.attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+  }, [data])
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    if (!svgRef.current || !gRef) return
+
+    const svg = d3.select(svgRef.current)
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        gRef.attr("transform", event.transform)
+        setCurrentTransform(event.transform)
+      })
+    
+    if (direction === 'in') {
+      svg.transition()
+        .duration(300)
+        .call(zoom.scaleBy as any, 1.3)
+    } else {
+      svg.transition()
+        .duration(300)
+        .call(zoom.scaleBy as any, 1 / 1.3)
+    }
+  }
+
+  const handleReset = () => {
+    if (!svgRef.current || !gRef) return
+
+    const svg = d3.select(svgRef.current)
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        gRef.attr("transform", event.transform)
+        setCurrentTransform(event.transform)
+      })
+
+    svg.transition()
+      .duration(300)
+      .call(zoom.transform as any, d3.zoomIdentity)
+  }
+
+  
+  
+  
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="relative w-full h-[900px] overflow-hidden border rounded-lg">
+      <svg ref={svgRef} width="100%" height="100%"></svg>
+      <div className="absolute top-4 right-4 flex space-x-2">
+        <Button onClick={() => handleZoom('in')} size="sm" variant="outline" aria-label="Zoom in">
+          <ZoomIn className="w-4 h-4" />
+        </Button>
+        <Button onClick={() => handleZoom('out')} size="sm" variant="outline" aria-label="Zoom out">
+          <ZoomOut className="w-4 h-4" />
+        </Button>
+        <Button onClick={handleReset} size="sm" variant="outline" aria-label="Reset zoom">
+          <Move className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="absolute bottom-4 right-4 bg-background/80 p-2 rounded">
+        <p className="text-sm">
+          Zoom: {currentTransform.k.toFixed(2)}x
+        </p>
+      </div>
     </div>
-  );
+  )
+}
+
+function ErrorFallback({error, resetErrorBoundary}: {error: Error; resetErrorBoundary: () => void}) {
+  return (
+    <div role="alert" className="p-4 bg-red-100 border border-red-400 rounded">
+      <h2 className="text-lg font-semibold text-red-800">Something went wrong:</h2>
+      <pre className="mt-2 text-sm text-red-600 whitespace-pre-wrap">{error.message}</pre>
+      <Button onClick={resetErrorBoundary} className="mt-4">Try again</Button>
+    </div>
+  )
+}
+
+export default function HuffmanCodingVisualizer() {
+  const [inputText, setInputText] = useState("HELLO WORLD")
+  const [step, setStep] = useState(0)
+  const [frequencyData, setFrequencyData] = useState<{ char: string; count: number }[]>([])
+  const [huffmanTree, setHuffmanTree] = useState<HuffmanNode | null>(null)
+  const [encodedText, setEncodedText] = useState("")
+  const [hoveredChar, setHoveredChar] = useState("")
+  const [showExplanations, setShowExplanations] = useState({
+    frequencyAnalysis: false,
+    huffmanTree: false,
+    encoding: false
+  })
+
+  useEffect(() => {
+    handleReset()
+  }, [inputText])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value.toUpperCase())
+  }
+
+  const handleNextStep = () => {
+    if (step === 0) {
+      setFrequencyData(getFrequencyData(inputText))
+    } else if (step === 1) {
+      setHuffmanTree(buildHuffmanTree(inputText))
+    } else if (step === 2) {
+      setEncodedText(encodeText(inputText, huffmanTree!))
+    }
+    setStep((prevStep) => Math.min(prevStep + 1, 3))
+  }
+
+  const handleReset = () => {
+    setStep(0)
+    setFrequencyData([])
+    setHuffmanTree(null)
+    setEncodedText("")
+    setShowExplanations({
+      frequencyAnalysis: false,
+      huffmanTree: false,
+      encoding: false
+    })
+  }
+
+  const toggleExplanation = (step: 'frequencyAnalysis' | 'huffmanTree' | 'encoding') => {
+    setShowExplanations(prev => ({
+      ...prev,
+      [step]: !prev[step]
+    }))
+  }
+
+  const renderExplanation = (step: 'frequencyAnalysis' | 'huffmanTree' | 'encoding') => {
+    if (!showExplanations[step]) return null
+
+    switch (step) {
+      case 'frequencyAnalysis':
+        return (
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <h4 className="font-semibold mb-2">In-depth Explanation: Frequency Analysis</h4>
+            <p>
+              Frequency analysis is the first step in Huffman coding. Here&apos;s what&apos;s happening:
+            </p>
+            <ol className="list-decimal list-inside mt-2 space-y-2">
+              <li>We iterate through each character in the input text.</li>
+              <li>For each character, we count how many times it appears.</li>
+              <li>We store these counts in a data structure (usually a hash table or dictionary).</li>
+              <li>The resulting frequency data is used to build the Huffman tree in the next step.</li>
+            </ol>
+            <p className="mt-2">
+              Characters that appear more frequently will be assigned shorter codes, which is the key to
+              Huffman coding&apos;s compression efficiency. This step helps us identify which characters should
+              get shorter codes.
+            </p>
+          </div>
+        )
+      case 'huffmanTree':
+        return (
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <h4 className="font-semibold mb-2">In-depth Explanation: Building the Huffman Tree</h4>
+            <p>
+              The Huffman tree is a binary tree that determines the codes for each character. Here&apos;s how it&apos;s built:
+            </p>
+            <ol className="list-decimal list-inside mt-2 space-y-2">
+              <li>Start with a list of nodes, one for each character, weighted by their frequency.</li>
+              <li>Repeatedly take the two nodes with the lowest frequencies and combine them into a new node.</li>
+              <li>The new node&apos;s frequency is the sum of its two child nodes.</li>
+              <li>Add this new node back to the list.</li>
+              <li>Repeat steps 2-4 until only one node remains (the root of the Huffman tree).</li>
+            </ol>
+            <p className="mt-2">
+              This process ensures that characters with higher frequencies are closer to the root of the tree,
+              resulting in shorter codes for these characters.
+            </p>
+          </div>
+        )
+      case 'encoding':
+        return (
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <h4 className="font-semibold mb-2">In-depth Explanation: Encoding</h4>
+            <p>
+              The encoding process uses the Huffman tree to assign unique binary codes to each character. Here&apos;s how it works:
+            </p>
+            <ol className="list-decimal list-inside mt-2 space-y-2">
+              <li>Start at the root of the Huffman tree.</li>
+              <li>For each character, trace the path from the root to the character&apos;s leaf node.</li>
+              <li>Assign &apos;0&apos; for each left branch and &apos;1&apos; for each right branch along this path.</li>
+              <li>The sequence of 0s and 1s forms the code for that character.</li>
+              <li>Replace each character in the original text with its corresponding code.</li>
+            </ol>
+            <p className="mt-2">
+              This encoding ensures that no code is a prefix of another, allowing for unambiguous decoding.
+              The resulting encoded text is a compressed version of the original, often significantly shorter in bit length.
+            </p>
+          </div>
+        )
+    }
+  }
+
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle>Huffman Coding Visualizer</CardTitle>
+            <CardDescription>Explore the process of Huffman Coding step by step</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center space-y-4">
+              <Input
+                placeholder="Enter text to encode"
+                value={inputText}
+                onChange={handleInputChange}
+                className="w-full max-w-md"
+              />
+              <div className="flex space-x-2">
+                <Button onClick={handleNextStep} disabled={step >= 3}>
+                {step === 0 ? "Start Visualization" : "Next Step"}
+                </Button>
+                <Button onClick={handleReset} variant="outline">
+                  Reset
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {step > 0 && (
+          <Card className="w-full max-w-5xl mt-8">
+            <CardContent className="p-6">
+              <Tabs defaultValue="visualization" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="visualization">Visualization</TabsTrigger>
+                  <TabsTrigger value="explanation">Explanation</TabsTrigger>
+                </TabsList>
+                <TabsContent value="visualization">
+                  <div className="space-y-8 px-4">
+                    {step >= 1 && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
+                          <Button onClick={() => toggleExplanation('frequencyAnalysis')} variant="outline" size="sm">
+                            <Info className="w-4 h-4 mr-2" />
+                            {showExplanations.frequencyAnalysis ? "Hide" : "Show"} Explanation
+                          </Button>
+                        </div>
+                        <div className="h-[200px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={frequencyData}>
+                              <XAxis dataKey="char" />
+                              <YAxis />
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-background border border-border p-2 rounded shadow">
+                                        <p className="text-foreground">
+                                          {`${payload[0].payload.char}: ${payload[0].value}`}
+                                        </p>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar dataKey="count" fill="hsl(var(--primary))" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        {renderExplanation('frequencyAnalysis')}
+                        {step === 1 && (
+                          <div className="mt-4 flex justify-center">
+                            <Button onClick={handleNextStep}>Next Step</Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {step >= 2 && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-semibold">Step 2: Huffman Tree</h3>
+                          <Button onClick={() => toggleExplanation('huffmanTree')} variant="outline" size="sm">
+                            <Info className="w-4 h-4 mr-2" />
+                            {showExplanations.huffmanTree ? "Hide" : "Show"} Explanation
+                          </Button>
+                        </div>
+                        {huffmanTree && <TreeVisualization data={huffmanTree} />}
+                        {renderExplanation('huffmanTree')}
+                        {step === 2 && (
+                          <div className="mt-4 flex justify-center">
+                            <Button onClick={handleNextStep}>Next Step</Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {step >= 3 && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
+                          <Button onClick={() => toggleExplanation('encoding')} variant="outline" size="sm">
+                            <Info className="w-4 h-4 mr-2" />
+                            {showExplanations.encoding ? "Hide" : "Show"} Explanation
+                          </Button>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex-1">
+                            <h4 className="text-md font-semibold  mb-2">Original Text:</h4>
+                            <p className="text-xl font-mono">{inputText}</p>
+                          </div>
+                          <ArrowRight className="w-8 h-8" />
+                          <div className="flex-1">
+                            <h4 className="text-md font-semibold mb-2">Encoded Text:</h4>
+                            <p className="text-xl font-mono break-all">
+                              {encodedText.split("").map((bit, index) => (
+                                <span
+                                  key={index}
+                                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                                  onMouseEnter={() => setHoveredChar(inputText[index])}
+                                  onMouseLeave={() => setHoveredChar("")}
+                                >
+                                  {bit}
+                                </span>
+                              ))}
+                            </p>
+                            {hoveredChar && (
+                              <p className="mt-2">
+                                Hovered character: {hoveredChar} (Code:{" "}
+                                {huffmanTree ? encodeText(hoveredChar, huffmanTree) : ""})
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {renderExplanation('encoding')}
+                        <div className="mt-4">
+                          <h4 className="text-md font-semibold mb-2">Compression Analysis:</h4>
+                          <p>
+                            Original size: {inputText.length * 8} bits
+                            <br />
+                            Compressed size: {encodedText.length} bits
+                            <br />
+                            Compression ratio:{" "}
+                            {((1 - encodedText.length / (inputText.length * 8)) * 100).toFixed(2)}%
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="explanation">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
+                      <p>
+                        In this step, we count how often each character appears in the input text. Characters
+                        that appear more frequently will be assigned shorter codes, which is the key to
+                        Huffman coding&apos;s compression efficiency.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Step 2: Building the Huffman Tree</h3>
+                      <p>
+                        We create a binary tree based on the character frequencies. The process starts with
+                        each character as a leaf node. We repeatedly combine the two nodes with the lowest
+                        frequencies until we have a single root node. This tree structure determines the
+                        binary codes for each character.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
+                      <p>
+                        We traverse the Huffman tree to assign binary codes to each character. Left branches
+                        are labeled with &apos;0&apos; and right branches with &apos;1&apos;. The path from the root to a
+                        character&apos;s leaf node becomes its code. We then replace each character in the
+                        original text with its corresponding code.
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Compression Analysis</h3>
+                      <p>
+                        We compare the size of the original text (assuming 8 bits per character) with the
+                        size of the encoded text. The difference shows how much space we&apos;ve saved through
+                        Huffman coding. This compression is lossless, meaning we can fully recover the
+                        original text from the encoded version.
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ErrorBoundary>
+  )
 }
