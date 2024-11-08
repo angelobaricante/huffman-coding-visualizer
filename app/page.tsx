@@ -9,6 +9,7 @@ import { ArrowRight, Info, ZoomIn, ZoomOut, Move } from "lucide-react"
 import * as d3 from "d3"
 import { ErrorBoundary } from 'react-error-boundary'
 import TextInputControl from '@/components/TextInputControl'
+import FrequencyAnalysisChart from '@/components/FrequencyAnalysisChart'
 
 type HuffmanNode = {
   char: string
@@ -341,7 +342,6 @@ export default function HuffmanCodingVisualizer() {
         )
     }
   }
-
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
@@ -372,29 +372,7 @@ export default function HuffmanCodingVisualizer() {
                             {showExplanations.frequencyAnalysis ? "Hide" : "Show"} Explanation
                           </Button>
                         </div>
-                        <div className="h-[200px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={frequencyData}>
-                              <XAxis dataKey="char" />
-                              <YAxis />
-                              <Tooltip
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div className="bg-background border border-border p-2 rounded shadow">
-                                        <p className="text-foreground">
-                                          {`${payload[0].payload.char}: ${payload[0].value}`}
-                                        </p>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              <Bar dataKey="count" fill="hsl(var(--primary))" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                        <FrequencyAnalysisChart frequencyData={frequencyData} />
                         {renderExplanation('frequencyAnalysis')}
                         {step === 1 && (
                           <div className="mt-4 flex justify-center">
