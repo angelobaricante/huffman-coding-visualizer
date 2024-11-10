@@ -9,6 +9,7 @@ interface TextInputControlProps {
   onNextStep: () => void
   onReset: () => void
   step: number
+  isLoading: boolean
 }
 
 export default function TextInputControl({
@@ -16,7 +17,8 @@ export default function TextInputControl({
   onInputChange,
   onNextStep,
   onReset,
-  step
+  step,
+  isLoading
 }: TextInputControlProps) {
   return (
     <Card className="w-full max-w-2xl">
@@ -33,8 +35,8 @@ export default function TextInputControl({
             className="w-full max-w-md"
           />
           <div className="flex space-x-2">
-            <Button onClick={onNextStep} disabled={step >= 3}>
-              {step === 0 ? "Start Visualization" : "Next Step"}
+            <Button onClick={onNextStep} disabled={isLoading || step >= 3}>
+              {isLoading ? "Loading..." : step === 0 ? "Start Visualization" : "Next Step"}
             </Button>
             <Button onClick={onReset} variant="outline">
               Reset

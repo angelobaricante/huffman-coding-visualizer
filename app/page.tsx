@@ -15,70 +15,22 @@ type HuffmanNode = {
   char: string
   frequency: number
   code: string
-  children?: HuffmanNode[]
+  children: HuffmanNode[] | null
 }
 
-const getFrequencyData = (text: string) => {
-  const freq: { [key: string]: number } = {}
-  for (const char of text) {
-    freq[char] = (freq[char] || 0) + 1
+const getFrequencyData = async (text: string) => {
+  const response = await fetch('/api/calculate-frequency', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to calculate frequency');
   }
-  return Object.entries(freq).map(([char, count]) => ({ char, count }))
-}
-
-const buildHuffmanTree = (text: string): HuffmanNode => {
-  const freq: { [key: string]: number } = {}
-  for (const char of text) {
-    freq[char] = (freq[char] || 0) + 1
-  }
-
-  const nodes: HuffmanNode[] = Object.entries(freq).map(([char, frequency]) => ({
-    char,
-    frequency,
-    code: "",
-  }))
-
-  while (nodes.length > 1) {
-    nodes.sort((a, b) => a.frequency - b.frequency)
-    const left = nodes.shift()!
-    const right = nodes.shift()!
-    const parent: HuffmanNode = {
-      char: left.char + right.char,
-      frequency: left.frequency + right.frequency,
-      code: "",
-      children: [left, right],
-    }
-    nodes.push(parent)
-  }
-
-  const assignCodes = (node: HuffmanNode, code: string) => {
-    node.code = code
-    if (node.children) {
-      assignCodes(node.children[0], code + "0")
-      assignCodes(node.children[1], code + "1")
-    }
-  }
-
-  assignCodes(nodes[0], "")
-  return nodes[0]
-}
-
-const encodeText = (text: string, root: HuffmanNode): string => {
-  const codes: { [key: string]: string } = {}
-  const getCodes = (node: HuffmanNode) => {
-    if (!node.children) {
-      codes[node.char] = node.code
-    } else {
-      getCodes(node.children[0])
-      getCodes(node.children[1])
-    }
-  }
-  getCodes(root)
-
-  return text
-    .split("")
-    .map((char) => codes[char])
-    .join("")
+  return response.json();
 }
 
 const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
@@ -237,6 +189,13 @@ export default function HuffmanCodingVisualizer() {
     huffmanTree: false,
     encoding: false
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [compressionData, setCompressionData] = useState<{
+    originalSize: number;
+    compressedSize: number;
+    compressionRatio: string;
+  } | null>(null);
+
 
   useEffect(() => {
     handleReset()
@@ -246,15 +205,62 @@ export default function HuffmanCodingVisualizer() {
     setInputText(e.target.value.toUpperCase())
   }
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 0) {
-      setFrequencyData(getFrequencyData(inputText))
+      setIsLoading(true);
+      try {
+        const data = await getFrequencyData(inputText);
+        setFrequencyData(data);
+        setStep(1);
+      } catch (error) {
+        console.error('Error calculating frequency:', error);
+      } finally {
+        setIsLoading(false);
+      }
     } else if (step === 1) {
-      setHuffmanTree(buildHuffmanTree(inputText))
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/build-tree', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ frequencyData: Object.fromEntries(frequencyData.map(item => [item.char, item.count])) }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to build Huffman tree');
+        }
+        const { tree } = await response.json();
+        setHuffmanTree(tree);
+        setStep(2);
+      } catch (error) {
+        console.error('Error building Huffman tree:', error);
+      } finally {
+        setIsLoading(false);
+      }
     } else if (step === 2) {
-      setEncodedText(encodeText(inputText, huffmanTree!))
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/encode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: inputText, tree: huffmanTree }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to encode text');
+        }
+        const { encodedText, originalSize, compressedSize, compressionRatio } = await response.json();
+        setEncodedText(encodedText);
+        setCompressionData({ originalSize, compressedSize, compressionRatio });
+        setStep(3);
+      } catch (error) {
+        console.error('Error encoding text:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    setStep((prevStep) => Math.min(prevStep + 1, 3))
   }
 
   const handleReset = () => {
@@ -351,6 +357,7 @@ export default function HuffmanCodingVisualizer() {
           onNextStep={handleNextStep}
           onReset={handleReset}
           step={step}
+          isLoading={isLoading}
         />
 
         {step > 0 && (
@@ -433,7 +440,7 @@ export default function HuffmanCodingVisualizer() {
                             {hoveredChar && (
                               <p className="mt-2">
                                 Hovered character: {hoveredChar} (Code:{" "}
-                                {huffmanTree ? encodeText(hoveredChar, huffmanTree) : ""})
+                                  {huffmanTree ? encodedText.split("")[inputText.indexOf(hoveredChar)] : ""})
                               </p>
                             )}
                           </div>
@@ -441,14 +448,15 @@ export default function HuffmanCodingVisualizer() {
                         {renderExplanation('encoding')}
                         <div className="mt-4">
                           <h4 className="text-md font-semibold mb-2">Compression Analysis:</h4>
+                          {compressionData && (
                           <p>
-                            Original size: {inputText.length * 8} bits
+                          Original size: {compressionData.originalSize} bits
                             <br />
-                            Compressed size: {encodedText.length} bits
+                            Compressed size: {compressionData.compressedSize} bits
                             <br />
-                            Compression ratio:{" "}
-                            {((1 - encodedText.length / (inputText.length * 8)) * 100).toFixed(2)}%
+                            Compression ratio: {compressionData.compressionRatio}%
                           </p>
+                          )}
                         </div>
                       </div>
                     )}
