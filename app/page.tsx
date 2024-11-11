@@ -1,21 +1,28 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowRight, Info, ZoomIn, ZoomOut, Move } from "lucide-react"
-import * as d3 from "d3"
+import { Info } from "lucide-react"
 import { ErrorBoundary } from 'react-error-boundary'
 import TextInputControl from '@/components/TextInputControl'
 import FrequencyAnalysisChart from '@/components/FrequencyAnalysisChart'
+import HuffmanTreeVisualizer from '@/components/HuffmanTreeVisualizer'
+import EncodedTextDisplay from '@/components/EncodedTextDisplay'
+import CompressionAnalysis from '@/components/CompressionAnalysis'
 
 type HuffmanNode = {
   char: string
   frequency: number
   code: string
   children: HuffmanNode[] | null
+}
+
+type CompressionData = {
+  originalSize: number
+  compressedSize: number
+  compressionRatio: string
 }
 
 const getFrequencyData = async (text: string) => {
@@ -31,140 +38,6 @@ const getFrequencyData = async (text: string) => {
     throw new Error(errorData.error || 'Failed to calculate frequency');
   }
   return response.json();
-}
-
-const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
-  const svgRef = useRef<SVGSVGElement>(null)
-  const [currentTransform, setCurrentTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity)
-  const [gRef, setGRef] = useState<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null)
-
-  useEffect(() => {
-    if (!data || !svgRef.current) return
-
-    const width = 2400
-    const height = 1200
-    const margin = { top: 40, right: 400, bottom: 40, left: 400 }
-
-    const svg = d3.select(svgRef.current)
-    svg.selectAll("*").remove()
-
-    const g = svg.append("g")
-    setGRef(g)
-
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform)
-        setCurrentTransform(event.transform)
-      })
-
-    svg.call(zoom)
-
-    const tree = d3.tree<HuffmanNode>()
-      .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
-      .separation((a, b) => {
-        const baseSeparation = a.parent === b.parent ? 4 : 5
-        const leafSeparation = (!a.children && !b.children) ? 2 : 1
-        return baseSeparation * leafSeparation
-      })
-
-    const root = d3.hierarchy(data)
-    tree(root)
-
-    g.selectAll(".link")
-      .data(root.links())
-      .enter().append("path")
-      .attr("class", "link")
-      .attr("d", d3.linkHorizontal<d3.HierarchyLink<HuffmanNode>, d3.HierarchyPointNode<HuffmanNode>>()
-        .x(d => d.y!)
-        .y(d => d.x!))
-      .attr("fill", "none")
-      .attr("stroke", "hsl(var(--primary))")
-
-    const node = g.selectAll(".node")
-      .data(root.descendants())
-      .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", d => `translate(${d.y},${d.x})`)
-
-    node.append("circle")
-      .attr("r", 30)
-      .attr("fill", "hsl(var(--primary))")
-
-    node.append("text")
-      .attr("dy", ".35em")
-      .attr("x", d => d.children ? -40 : 40)
-      .attr("text-anchor", d => d.children ? "end" : "start")
-      .text(d => {
-        const char = d.data.char
-        return char.length > 6 ? char.slice(0, 6) + "..." : char
-      })
-      .attr("fill", "hsl(var(--primary))")
-      .attr("font-size", "16px")
-
-    svg.attr("viewBox", `0 0 ${width} ${height}`)
-      .attr("preserveAspectRatio", "xMidYMid meet")
-  }, [data])
-
-  const handleZoom = (direction: 'in' | 'out') => {
-    if (!svgRef.current || !gRef) return
-
-    const svg = d3.select(svgRef.current)
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on("zoom", (event) => {
-        gRef.attr("transform", event.transform)
-        setCurrentTransform(event.transform)
-      })
-    
-    if (direction === 'in') {
-      svg.transition()
-        .duration(300)
-        .call(zoom.scaleBy, 1.3)
-    } else {
-      svg.transition()
-        .duration(300)
-        .call(zoom.scaleBy, 1 / 1.3)
-    }
-  }
-
-  const handleReset = () => {
-    if (!svgRef.current || !gRef) return
-
-    const svg = d3.select(svgRef.current)
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on("zoom", (event) => {
-        gRef.attr("transform", event.transform)
-        setCurrentTransform(event.transform)
-      })
-
-    svg.transition()
-      .duration(300)
-      .call(zoom.transform, d3.zoomIdentity)
-  }
-
-  return (
-    <div className="relative w-full h-[900px] overflow-hidden border rounded-lg">
-      <svg ref={svgRef} width="100%" height="100%"></svg>
-      <div className="absolute top-4 right-4 flex space-x-2">
-        <Button onClick={() => handleZoom('in')} size="sm" variant="outline" aria-label="Zoom in">
-          <ZoomIn className="w-4 h-4" />
-        </Button>
-        <Button onClick={() => handleZoom('out')} size="sm" variant="outline" aria-label="Zoom out">
-          <ZoomOut className="w-4 h-4" />
-        </Button>
-        <Button onClick={handleReset} size="sm" variant="outline" aria-label="Reset zoom">
-          <Move className="w-4 h-4" />
-        </Button>
-      </div>
-      <div className="absolute bottom-4 right-4 bg-background/80 p-2 rounded">
-        <p className="text-sm">
-          Zoom: {currentTransform.k.toFixed(2)}x
-        </p>
-      </div>
-    </div>
-  )
 }
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error; resetErrorBoundary: () => void}) {
@@ -183,19 +56,13 @@ export default function HuffmanCodingVisualizer() {
   const [frequencyData, setFrequencyData] = useState<{ char: string; count: number }[]>([])
   const [huffmanTree, setHuffmanTree] = useState<HuffmanNode | null>(null)
   const [encodedText, setEncodedText] = useState("")
-  const [hoveredChar, setHoveredChar] = useState("")
   const [showExplanations, setShowExplanations] = useState({
     frequencyAnalysis: false,
     huffmanTree: false,
     encoding: false
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [compressionData, setCompressionData] = useState<{
-    originalSize: number;
-    compressedSize: number;
-    compressionRatio: string;
-  } | null>(null);
-
+  const [compressionData, setCompressionData] = useState<CompressionData | null>(null)
 
   useEffect(() => {
     handleReset()
@@ -273,6 +140,7 @@ export default function HuffmanCodingVisualizer() {
       huffmanTree: false,
       encoding: false
     })
+    setCompressionData(null)
   }
 
   const toggleExplanation = (step: 'frequencyAnalysis' | 'huffmanTree' | 'encoding') => {
@@ -348,6 +216,7 @@ export default function HuffmanCodingVisualizer() {
         )
     }
   }
+
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
@@ -398,7 +267,7 @@ export default function HuffmanCodingVisualizer() {
                             {showExplanations.huffmanTree ? "Hide" : "Show"} Explanation
                           </Button>
                         </div>
-                        {huffmanTree && <TreeVisualization data={huffmanTree} />}
+                        {huffmanTree && <HuffmanTreeVisualizer data={huffmanTree} />}
                         {renderExplanation('huffmanTree')}
                         {step === 2 && (
                           <div className="mt-4 flex justify-center">
@@ -417,47 +286,13 @@ export default function HuffmanCodingVisualizer() {
                             {showExplanations.encoding ? "Hide" : "Show"} Explanation
                           </Button>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-1">
-                            <h4 className="text-md font-semibold  mb-2">Original Text:</h4>
-                            <p className="text-xl font-mono">{inputText}</p>
-                          </div>
-                          <ArrowRight className="w-8 h-8" />
-                          <div className="flex-1">
-                            <h4 className="text-md font-semibold mb-2">Encoded Text:</h4>
-                            <p className="text-xl font-mono break-all">
-                              {encodedText.split("").map((bit, index) => (
-                                <span
-                                  key={index}
-                                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                                  onMouseEnter={() => setHoveredChar(inputText[index])}
-                                  onMouseLeave={() => setHoveredChar("")}
-                                >
-                                  {bit}
-                                </span>
-                              ))}
-                            </p>
-                            {hoveredChar && (
-                              <p className="mt-2">
-                                Hovered character: {hoveredChar} (Code:{" "}
-                                  {huffmanTree ? encodedText.split("")[inputText.indexOf(hoveredChar)] : ""})
-                              </p>
-                            )}
-                          </div>
-                        </div>
+                        <EncodedTextDisplay
+                          inputText={inputText}
+                          encodedText={encodedText}
+                          huffmanTree={huffmanTree}
+                        />
                         {renderExplanation('encoding')}
-                        <div className="mt-4">
-                          <h4 className="text-md font-semibold mb-2">Compression Analysis:</h4>
-                          {compressionData && (
-                          <p>
-                          Original size: {compressionData.originalSize} bits
-                            <br />
-                            Compressed size: {compressionData.compressedSize} bits
-                            <br />
-                            Compression ratio: {compressionData.compressionRatio}%
-                          </p>
-                          )}
-                        </div>
+                        <CompressionAnalysis compressionData={compressionData} />
                       </div>
                     )}
                   </div>
