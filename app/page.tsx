@@ -1,15 +1,16 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowRight, Info, ZoomIn, ZoomOut, Move } from "lucide-react"
 import * as d3 from "d3"
-import { ErrorBoundary } from 'react-error-boundary'
-import TextInputControl from '@/components/TextInputControl'
-import FrequencyAnalysisChart from '@/components/FrequencyAnalysisChart'
+import { Inter } from 'next/font/google'
+import Link from 'next/link'
+
+const inter = Inter({ subsets: ['latin'] })
 
 type HuffmanNode = {
   char: string
@@ -215,17 +216,90 @@ const TreeVisualization: React.FC<{ data: HuffmanNode }> = ({ data }) => {
   )
 }
 
-function ErrorFallback({error, resetErrorBoundary}: {error: Error; resetErrorBoundary: () => void}) {
+function TextInputControl({ inputText, onInputChange, onNextStep, onReset, step }: {
+  inputText: string;
+  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onNextStep: () => void;
+  onReset: () => void;
+  step: number;
+}) {
   return (
-    <div role="alert" className="p-4 bg-red-100 border border-red-400 rounded">
-      <h2 className="text-lg font-semibold text-red-800">Something went wrong:</h2>
-      <pre className="mt-2 text-sm text-red-600 whitespace-pre-wrap">{error.message}</pre>
-      <Button onClick={resetErrorBoundary} className="mt-4">Try again</Button>
+    <div className="w-full max-w-lg mx-auto text-center">
+      <input
+        type="text"
+        value={inputText}
+        onChange={onInputChange}
+        className="w-full max-w-md p-3 text-base border rounded-lg mb-4 text-center mx-auto"
+        placeholder="Enter text to encode"
+      />
+      <div className="flex justify-center gap-4">
+        <Button 
+          onClick={onNextStep} 
+          disabled={step === 3}
+          className="px-8 py-2 text-base"
+        >
+          {step === 0 ? "Start Visualization" : "Next Step"}
+        </Button>
+        <Button 
+          onClick={onReset} 
+          variant="outline"
+          className="px-8 py-2 text-base"
+        >
+          Reset
+        </Button>
+      </div>
     </div>
   )
 }
 
-export default function HuffmanCodingVisualizer() {
+function FrequencyAnalysisChart({ frequencyData }: { frequencyData: { char: string; count: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={frequencyData}>
+        <XAxis dataKey="char" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="count" fill="hsl(var(--primary))" />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+function Navbar() {
+  return (
+    <nav className="bg-primary text-primary-foreground p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link href="/" className="text-2xl font-bold">
+          Huffman Coding Visualizer
+        </Link>
+        <ul className="flex space-x-4">
+          <li>
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>
+          </li>
+          <li>
+            <Link href="/about" className="hover:underline">
+              About
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="bg-primary text-primary-foreground mt-8">
+      <div className="container mx-auto px-4 py-6">
+        <p>&copy; 2024 Huffman Coding Visualizer. All rights reserved.</p>
+      </div>
+    </footer>
+  )
+}
+
+function HuffmanCodingVisualizer() {
   const [inputText, setInputText] = useState("HELLO WORLD")
   const [step, setStep] = useState(0)
   const [frequencyData, setFrequencyData] = useState<{ char: string; count: number }[]>([])
@@ -342,162 +416,177 @@ export default function HuffmanCodingVisualizer() {
         )
     }
   }
+
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
-        <TextInputControl
-          inputText={inputText}
-          onInputChange={handleInputChange}
-          onNextStep={handleNextStep}
-          onReset={handleReset}
-          step={step}
-        />
+    <div className="container mx-auto p-4 min-h-screen flex flex-col items-center justify-start pt-16">
+      <h1 className="text-4xl font-bold mb-4 text-center">Huffman Coding Visualizer</h1>
+      <p className="text-xl text-muted-foreground mb-6 text-center">
+        Explore the process of Huffman Coding step by step
+      </p>
+      
+      <TextInputControl
+        inputText={inputText}
+        onInputChange={handleInputChange}
+        onNextStep={handleNextStep}
+        onReset={handleReset}
+        step={step}
+      />
 
-        {step > 0 && (
-          <Card className="w-full max-w-5xl mt-8">
-            <CardContent className="p-6">
-              <Tabs defaultValue="visualization" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="visualization">Visualization</TabsTrigger>
-                  <TabsTrigger value="explanation">Explanation</TabsTrigger>
-                </TabsList>
-                <TabsContent value="visualization">
-                  <div className="space-y-8 px-4">
-                    {step >= 1 && (
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
-                          <Button onClick={() => toggleExplanation('frequencyAnalysis')} variant="outline" size="sm">
-                            <Info className="w-4 h-4 mr-2" />
-                            {showExplanations.frequencyAnalysis ? "Hide" : "Show"} Explanation
-                          </Button>
-                        </div>
-                        <FrequencyAnalysisChart frequencyData={frequencyData} />
-                        {renderExplanation('frequencyAnalysis')}
-                        {step === 1 && (
-                          <div className="mt-4 flex justify-center">
-                            <Button onClick={handleNextStep}>Next Step</Button>
-                          </div>
-                        )}
+      {step > 0 && (
+        <Card className="w-full max-w-5xl mt-8">
+          <CardContent className="p-6">
+            <Tabs defaultValue="visualization" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="visualization">Visualization</TabsTrigger>
+                <TabsTrigger value="explanation">Explanation</TabsTrigger>
+              </TabsList>
+              <TabsContent value="visualization">
+                <div className="space-y-8 px-4">
+                  {step >= 1 && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
+                        <Button onClick={() => toggleExplanation('frequencyAnalysis')} variant="outline" size="sm">
+                          <Info className="w-4 h-4 mr-2" />
+                          {showExplanations.frequencyAnalysis ? "Hide" : "Show"} Explanation
+                        </Button>
                       </div>
-                    )}
-
-                    {step >= 2 && (
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-semibold">Step 2: Huffman Tree</h3>
-                          <Button onClick={() => toggleExplanation('huffmanTree')} variant="outline" size="sm">
-                            <Info className="w-4 h-4 mr-2" />
-                            {showExplanations.huffmanTree ? "Hide" : "Show"} Explanation
-                          </Button>
+                      <FrequencyAnalysisChart frequencyData={frequencyData} />
+                      {renderExplanation('frequencyAnalysis')}
+                      {step === 1 && (
+                        <div className="mt-4 flex justify-center">
+                          <Button onClick={handleNextStep}>Next Step</Button>
                         </div>
-                        {huffmanTree && <TreeVisualization data={huffmanTree} />}
-                        {renderExplanation('huffmanTree')}
-                        {step === 2 && (
-                          <div className="mt-4 flex justify-center">
-                            <Button onClick={handleNextStep}>Next Step</Button>
-                          </div>
-                        )}
+                      )}
+                    </div>
+                  )}
+
+                  {step >= 2 && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-semibold">Step 2: Huffman Tree</h3>
+                        <Button onClick={() => toggleExplanation('huffmanTree')} variant="outline" size="sm">
+                          <Info className="w-4 h-4 mr-2" />
+                          {showExplanations.huffmanTree ? "Hide" : "Show"} Explanation
+                        </Button>
                       </div>
-                    )}
+                      {huffmanTree && <TreeVisualization data={huffmanTree} />}
+                      {renderExplanation('huffmanTree')}
+                      {step === 2 && (
+                        <div className="mt-4 flex justify-center">
+                          <Button onClick={handleNextStep}>Next Step</Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                    {step >= 3 && (
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
-                          <Button onClick={() => toggleExplanation('encoding')} variant="outline" size="sm">
-                            <Info className="w-4 h-4 mr-2" />
-                            {showExplanations.encoding ? "Hide" : "Show"} Explanation
-                          </Button>
+                  {step >= 3 && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
+                        <Button onClick={() => toggleExplanation('encoding')} variant="outline" size="sm">
+                          <Info className="w-4 h-4 mr-2" />
+                          {showExplanations.encoding ? "Hide" : "Show"} Explanation
+                        </Button>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1">
+                          <h4 className="text-md font-semibold  mb-2">Original Text:</h4>
+                          <p className="text-xl font-mono">{inputText}</p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-1">
-                            <h4 className="text-md font-semibold  mb-2">Original Text:</h4>
-                            <p className="text-xl font-mono">{inputText}</p>
-                          </div>
-                          <ArrowRight className="w-8 h-8" />
-                          <div className="flex-1">
-                            <h4 className="text-md font-semibold mb-2">Encoded Text:</h4>
-                            <p className="text-xl font-mono break-all">
-                              {encodedText.split("").map((bit, index) => (
-                                <span
-                                  key={index}
-                                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                                  onMouseEnter={() => setHoveredChar(inputText[index])}
-                                  onMouseLeave={() => setHoveredChar("")}
-                                >
-                                  {bit}
-                                </span>
-                              ))}
-                            </p>
-                            {hoveredChar && (
-                              <p className="mt-2">
-                                Hovered character: {hoveredChar} (Code:{" "}
-                                {huffmanTree ? encodeText(hoveredChar, huffmanTree) : ""})
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {renderExplanation('encoding')}
-                        <div className="mt-4">
-                          <h4 className="text-md font-semibold mb-2">Compression Analysis:</h4>
-                          <p>
-                            Original size: {inputText.length * 8} bits
-                            <br />
-                            Compressed size: {encodedText.length} bits
-                            <br />
-                            Compression ratio:{" "}
-                            {((1 - encodedText.length / (inputText.length * 8)) * 100).toFixed(2)}%
+                        <ArrowRight className="w-8 h-8" />
+                        <div className="flex-1">
+                          <h4 className="text-md font-semibold mb-2">Encoded Text:</h4>
+                          <p className="text-xl font-mono break-all">
+                            {encodedText.split("").map((bit, index) => (
+                              <span
+                                key={index}
+                                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                                onMouseEnter={() => setHoveredChar(inputText[index])}
+                                onMouseLeave={() => setHoveredChar("")}
+                              >
+                                {bit}
+                              </span>
+                            ))}
                           </p>
+                          {hoveredChar && (
+                            <p className="mt-2">
+                              Hovered character: {hoveredChar} (Code:{" "}
+                              {huffmanTree ? encodeText(hoveredChar, huffmanTree) : ""})
+                            </p>
+                          )}
                         </div>
                       </div>
-                    )}
+                      {renderExplanation('encoding')}
+                      <div className="mt-4">
+                        <h4 className="text-md font-semibold mb-2">Compression Analysis:</h4>
+                        <p>
+                          Original size: {inputText.length * 8} bits
+                          <br />
+                          Compressed size: {encodedText.length} bits
+                          <br />
+                          Compression ratio:{" "}
+                          {((1 - encodedText.length / (inputText.length * 8)) * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="explanation">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
+                    <p>
+                      In this step, we count how often each character appears in the input text. Characters
+                      that appear more frequently will be assigned shorter codes, which is the key to
+                      Huffman coding&apos;s compression efficiency.
+                    </p>
                   </div>
-                </TabsContent>
-                <TabsContent value="explanation">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">Step 1: Frequency Analysis</h3>
-                      <p>
-                        In this step, we count how often each character appears in the input text. Characters
-                        that appear more frequently will be assigned shorter codes, which is the key to
-                        Huffman coding&apos;s compression efficiency.
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Step 2: Building the Huffman Tree</h3>
-                      <p>
-                        We create a binary tree based on the character frequencies. The process starts with
-                        each character as a leaf node. We repeatedly combine the two nodes with the lowest
-                        frequencies until we have a single root node. This tree structure determines the
-                        binary codes for each character.
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
-                      <p>
-                        We traverse the Huffman tree to assign binary codes to each character. Left branches
-                        are labeled with &apos;0&apos; and right branches with &apos;1&apos;. The path from the root to a
-                        character&apos;s leaf node becomes its code. We then replace each character in the
-                        original text with its corresponding code.
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Compression Analysis</h3>
-                      <p>
-                        We compare the size of the original text (assuming 8 bits per character) with the
-                        size of the encoded text. The difference shows how much space we&apos;ve saved through
-                        Huffman coding. This compression is lossless, meaning we can fully recover the
-                        original text from the encoded version.
-                      </p>
-                    </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Step 2: Building the Huffman Tree</h3>
+                    <p>
+                      We create a binary tree based on the character frequencies. The process starts with
+                      each character as a leaf node. We repeatedly combine the two nodes with the lowest
+                      frequencies until we have a single root node. This tree structure determines the
+                      binary codes for each character.
+                    </p>
                   </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </ErrorBoundary>
+                  <div>
+                    <h3 className="text-lg font-semibold">Step 3: Encoding</h3>
+                    <p>
+                      We traverse the Huffman tree to assign binary codes to each character. Left branches
+                      are labeled with &apos;0&apos; and right branches with &apos;1&apos;. The path from the root to a
+                      character&apos;s leaf node becomes its code. We then replace each character in the
+                      original text with its corresponding code.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Compression Analysis</h3>
+                    <p>
+                      We compare the size of the original text (assuming 8 bits per character) with the
+                      size of the encoded text. The difference shows how much space we&apos;ve saved through
+                      Huffman coding. This compression is lossless, meaning we can fully recover the
+                      original text from the encoded version.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <div className={inter.className}>
+      <main className="flex-grow">
+        <HuffmanCodingVisualizer />
+      </main>
+      <Footer />
+    </div>
   )
 }
