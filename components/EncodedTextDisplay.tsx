@@ -40,9 +40,9 @@ const EncodedTextDisplay: React.FC<EncodedTextDisplayProps> = ({ inputText, enco
 
   const encodedChars = useMemo(() => {
     if (!encodedText) return []
-    let chars = []
+    const chars = []
     let currentCode = ''
-    for (let bit of encodedText) {
+    for (const bit of encodedText) {
       currentCode += bit
       if (codeToCharMap[currentCode]) {
         chars.push(currentCode)

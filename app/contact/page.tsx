@@ -38,12 +38,14 @@ export default function ContactPage() {
         setEmail('')
         setMessage('')
       } else {
-        throw new Error('Failed to send message')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to send message')
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again later.",
+        description: `Failed to send message: ${errorMessage}. Please try again later.`,
         variant: "destructive",
       })
     } finally {
@@ -57,7 +59,7 @@ export default function ContactPage() {
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tighter">Contact Us</h1>
           <p className="text-lg text-muted-foreground">
-            Have questions or feedback? We'd love to hear from you!
+            Have questions or feedback? We&apos;d love to hear from you!
           </p>
         </div>
 
@@ -65,7 +67,7 @@ export default function ContactPage() {
           <Card>
             <CardHeader>
               <CardTitle>Send us a message</CardTitle>
-              <CardDescription>Fill out the form below and we'll get back to you as soon as possible.</CardDescription>
+              <CardDescription>Fill out the form below and we&apos;ll get back to you as soon as possible.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
