@@ -61,7 +61,7 @@ export default function TeamPage() {
         >
           <h1 className="text-4xl font-bold tracking-tighter">Meet Our Team</h1>
           <p className="text-lg text-muted-foreground">
-          We're passionate developers making Huffman coding accessible through interactive visualization. Our platform bridges theory and practice, helping users grasp data compression concepts intuitively.
+          We&apos;re passionate developers making Huffman coding accessible through interactive visualization. Our platform bridges theory and practice, helping users grasp data compression concepts intuitively.
           </p>
         </motion.div>
 
