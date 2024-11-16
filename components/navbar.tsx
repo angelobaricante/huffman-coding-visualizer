@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Binary, Menu } from "lucide-react"
+import { Binary, Menu } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -51,30 +51,32 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-background border-b shadow-sm">
-      <div className="container mx-auto flex justify-between items-center h-16 px-4">
-        <Link href="/" className="text-2xl font-bold flex items-center">
-          <Binary className="w-6 h-6 mr-2" />
-          Huffman Coding
-        </Link>
-        <div className="hidden md:flex space-x-8">
-          <NavItems />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link href="/" className="text-2xl font-bold flex items-center">
+            <Binary className="w-6 h-6 mr-2" />
+            Huffman Coding
+          </Link>
+          <div className="hidden md:flex space-x-8">
+            <NavItems />
+          </div>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="outline" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+                <div className="mt-4 flex flex-col space-y-4">
+                  <NavItems />
+                </div>
+              </SheetHeader>
+            </SheetContent>
+          </Sheet>
         </div>
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="outline" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-              <div className="mt-4 flex flex-col space-y-4">
-                <NavItems />
-              </div>
-            </SheetHeader>
-          </SheetContent>
-        </Sheet>
       </div>
     </nav>
   )
