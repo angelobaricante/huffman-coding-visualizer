@@ -6,25 +6,49 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useToast } from '@/hooks/use-toast'
+import { Toaster } from "@/components/ui/toaster"
 import { Mail, Phone, MapPin } from 'lucide-react'
 
 export default function ContactPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the form data to your backend
-    console.log({ name, email, message })
-    toast({
-      title: "Message Sent",
-      description: "Thank you for your message. We'll get back to you soon!",
-    })
-    setName('')
-    setEmail('')
-    setMessage('')
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, message }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Message Sent",
+          description: "Thank you for your message. We'll get back to you soon!",
+        })
+        setName('')
+        setEmail('')
+        setMessage('')
+      } else {
+        throw new Error('Failed to send message')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -70,7 +94,9 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-                <Button type="submit">Send Message</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -83,15 +109,15 @@ export default function ContactPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Mail className="w-5 h-5 text-muted-foreground" />
-                <span>huffman@example.com</span>
+                <span>angelobaricante@gmail.com</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-5 h-5 text-muted-foreground" />
-                <span>+1 (123) 456-7890</span>
+                <span>(+63) 951 622 2325</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-muted-foreground" />
-                <span>123 Coding Street, Algorithm City, 12345</span>
+                <span>Batangas, Philippines</span>
               </div>
             </CardContent>
           </Card>
@@ -117,6 +143,7 @@ export default function ContactPage() {
           </CardContent>
         </Card>
       </div>
+      <Toaster />
     </div>
   )
 }
