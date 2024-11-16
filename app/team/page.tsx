@@ -18,7 +18,7 @@ const teamMembers: TeamMember[] = [
     name: "Mark Angelo R. Baricante",
     role: "Project Manager/Fullstack Developer",
     github: "https://github.com/angelobaricante",
-    image: "/angelo_baricante.jpg"
+    image: "/angelo.jpg"
   },
   {
     name: "Elwin Jen M. Barredo",
