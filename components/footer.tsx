@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <div className="flex items-center">
             <Binary className="mr-2 h-5 w-5" />
-            <span className="text-sm font-semibold">Huffman Coding Visualizer</span>
+            <span className="text-sm font-semibold">Huffmen Visualizer</span>
           </div>
           <nav className="flex flex-wrap justify-center gap-6 text-sm">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -18,7 +18,7 @@ export function Footer() {
           </nav>
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
             <p className="text-center text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Huffman Coding Visualizer
+              © {new Date().getFullYear()} Huffmen Visualizer
             </p>
             <a
               href="https://github.com/angelobaricante/huffman-coding-visualizer"

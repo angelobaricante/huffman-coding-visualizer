@@ -55,7 +55,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold flex items-center">
             <Binary className="w-6 h-6 mr-2" />
-            Huffman Coding
+            Huffmen Visualizer
           </Link>
           <div className="hidden md:flex space-x-8">
             <NavItems />

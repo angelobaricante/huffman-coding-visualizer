@@ -41,7 +41,7 @@ const teamMembers: TeamMember[] = [
 ]
 
 const advisor = {
-  name: "Ms. FATIMA MARIE P. AGDON, MSCS",
+  name: "Ms. Fatima Marie P. Agdon, MSCS",
   role: "Project Advisor",
   github: "https://github.com/marieemoiselle",
   image: "/fatima_agdon.jpg"
