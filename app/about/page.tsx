@@ -5,7 +5,7 @@ export default function AboutPage() {
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tighter">About Huffman Coding Visualizer</h1>
+          <h1 className="text-4xl font-bold tracking-tighter">About Huffmen Visualizer</h1>
           <p className="text-lg text-muted-foreground">
             Learn about our project and its goals
           </p>
@@ -18,7 +18,7 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p>
-              The Huffman Coding Visualizer is an educational web application designed to help students,
+              The Huffmen Visualizer is an educational web application designed to help students,
               developers, and enthusiasts understand the principles of data compression through Huffman coding.
               Our mission is to make complex algorithms accessible and understandable through interactive
               visualizations.
