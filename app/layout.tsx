@@ -17,7 +17,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Huffman Coding Visualizer",
+  title: "Huffmen Visualizer",
   description: "Explore the process of Huffman Coding step by step",
   icons: {
     icon: '/huffman_coding_visualizer_logo.svg',
