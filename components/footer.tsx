@@ -3,7 +3,7 @@ import { Binary, Github } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="border-t bg-background py-6">
+    <footer className="border-t border-gray-200/20 bg-transparent py-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <div className="flex items-center">
@@ -35,3 +35,4 @@ export function Footer() {
     </footer>
   )
 }
+
