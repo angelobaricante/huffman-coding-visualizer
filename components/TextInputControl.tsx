@@ -116,18 +116,18 @@ export default function HuffmanHeader({
                   </li>
                   <li className="flex items-start">
                     <span className="font-medium mr-2">Frequency Analysis:</span>
-                    <span>Click "Start Visualization" to see the frequency of each character.</span>
+                    <span>Click &quot;Start Visualization&quot; to see the frequency of each character.</span>
                   </li>
                   <li className="flex items-start">
                     <span className="font-medium mr-2">Tree Construction:</span>
-                    <span>Click "Next Step" to visualize the Huffman tree being built.</span>
+                    <span>Click &quot;Next Step&quot; to visualize the Huffman tree being built.</span>
                   </li>
                   <li className="flex items-start">
                     <span className="font-medium mr-2">Code Generation:</span>
-                    <span>Click "Next Step" again to see the Huffman codes for each character.</span>
+                    <span>Click &quot;Next Step&quot; again to see the Huffman codes for each character.</span>
                   </li>
                 </ol>
-                <p className="mt-2 italic">Use the "Reset" button at any time to start over with new input.</p>
+                <p className="mt-2 italic">Use the &quot;Reset&quot; button at any time to start over with new input.</p>
               </motion.div>
             )}
           </AnimatePresence>
