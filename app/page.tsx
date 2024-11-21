@@ -22,7 +22,7 @@ export default function HuffmanCodingVisualizer() {
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full max-w-4xl mx-auto px-4 py-8">
+      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-9rem)] w-full max-w-4xl mx-auto px-4 py-8">
         <div className="w-full max-w-3xl flex flex-col items-center justify-center space-y-6">
           <TextInputControl
             inputText={inputText}
