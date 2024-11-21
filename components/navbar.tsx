@@ -50,7 +50,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <nav className="sticky top-0 z-50 bg-background border-b shadow-sm">
+    <nav className="sticky top-0 z-50 border-b border-gray-200/20 backdrop-blur-sm bg-white/5">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold flex items-center">
@@ -67,7 +67,7 @@ export function Navbar() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent side="right" className="bg-white/80 backdrop-blur-sm">
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
                 <div className="mt-4 flex flex-col space-y-4">
@@ -81,3 +81,4 @@ export function Navbar() {
     </nav>
   )
 }
+

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { GoToTopButton } from "@/components/GoToTopButton";
+import BinaryBackground from "@/components/BinaryBackground";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
+        <BinaryBackground />
           {children}
         <Footer />
         <GoToTopButton />
