@@ -9,7 +9,7 @@ interface BinaryBackgroundProps {
 }
 
 export default function BinaryBackground({
-  color = '#F0F0F0', // Update 1: Changed default color to a lighter shade
+  color = '#F0F0F0',
   fontSize = 14,
   speed = 2000
 }: BinaryBackgroundProps) {
@@ -23,20 +23,26 @@ export default function BinaryBackground({
     if (!ctx) return
 
     let animationFrameId: number
+    let columns: number
+    let rows: number
+    let grid: { char: string; opacity: number }[][]
+
+    const initializeGrid = () => {
+      grid = Array(columns).fill(null).map(() => 
+        Array(rows).fill(null).map(() => ({ char: Math.random() > 0.5 ? '1' : '0', opacity: 0 }))
+      )
+    }
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
+      columns = Math.ceil(canvas.width / fontSize)
+      rows = Math.ceil(canvas.height / fontSize)
+      initializeGrid()
     }
 
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
-
-    const columns = Math.floor(canvas.width / fontSize)
-    const rows = Math.floor(canvas.height / fontSize)
-    const grid: { char: string; opacity: number }[][] = Array(columns).fill(null).map(() => 
-      Array(rows).fill(null).map(() => ({ char: Math.random() > 0.5 ? '1' : '0', opacity: 0 }))
-    )
 
     const updateGrid = () => {
       for (let i = 0; i < columns; i++) {
@@ -59,7 +65,7 @@ export default function BinaryBackground({
       for (let i = 0; i < columns; i++) {
         for (let j = 0; j < rows; j++) {
           const { char, opacity } = grid[i][j]
-          ctx.fillStyle = `rgba(240, 240, 240, ${opacity})`; // Update 2: Changed fillStyle
+          ctx.fillStyle = `rgba(240, 240, 240, ${opacity})`
           ctx.fillText(char, i * fontSize, (j + 1) * fontSize)
         }
       }
@@ -79,7 +85,7 @@ export default function BinaryBackground({
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full"
+      className="fixed inset-0 w-screen h-screen"
       style={{
         zIndex: -1,
         backgroundColor: 'white',
