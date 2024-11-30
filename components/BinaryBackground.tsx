@@ -47,17 +47,18 @@ export default function BinaryBackground({
     const updateGrid = () => {
       for (let i = 0; i < columns; i++) {
         for (let j = 0; j < rows; j++) {
-          if (Math.random() < 0.01) {
-            grid[i][j] = { char: Math.random() > 0.5 ? '1' : '0', opacity: 1 }
+          if (Math.random() < 0.005) {
+            grid[i][j] = { char: Math.random() > 0.5 ? '1' : '0', opacity: 0.3 }
           } else if (grid[i][j].opacity > 0) {
-            grid[i][j].opacity -= 0.02
+            grid[i][j].opacity -= 0.005
           }
         }
       }
     }
 
     const draw = () => {
-      ctx.fillStyle = 'white'
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      ctx.fillStyle = isDarkMode ? '#000000' : '#FFFFFF'; // Background color
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       ctx.font = `${fontSize}px monospace`
@@ -65,7 +66,7 @@ export default function BinaryBackground({
       for (let i = 0; i < columns; i++) {
         for (let j = 0; j < rows; j++) {
           const { char, opacity } = grid[i][j]
-          ctx.fillStyle = `rgba(240, 240, 240, ${opacity})`
+          ctx.fillStyle = `rgba(${isDarkMode ? '255, 255, 255' : '0, 0, 0'}, ${opacity * 0.3})`
           ctx.fillText(char, i * fontSize, (j + 1) * fontSize)
         }
       }
@@ -88,7 +89,7 @@ export default function BinaryBackground({
       className="fixed inset-0 w-screen h-screen"
       style={{
         zIndex: -1,
-        backgroundColor: 'white',
+        backgroundColor: 'transparent',
       }}
       aria-hidden="true"
     />
