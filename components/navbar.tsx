@@ -33,13 +33,13 @@ const NavItems = ({ onClick }: { onClick: () => void }) => {
       >
         About
       </Link>
-      <Link 
+      {/* <Link 
         href="/team" 
         onClick={onClick} 
         className={`hover:text-primary ${pathname === '/team' ? 'font-bold' : ''}`}
       >
         Team
-      </Link>
+      </Link> */}
       <Link 
         href="/contact" 
         onClick={onClick} 
